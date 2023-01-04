@@ -1,0 +1,6 @@
+**/__pycache__/**checkpoints/
+**/.DS_Store
+.DS_Store
+.idea/
+./data
+**/*.pt
