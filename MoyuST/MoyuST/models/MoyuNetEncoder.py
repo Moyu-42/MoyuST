@@ -50,10 +50,6 @@ class MoyuAttnLayer(nn.Module):
         update_value = self.update_gate(x)
         attn_x, _ = self.multi_head_attn(x, x, x)
         gated_value = attn_x + update_value * attn_x + (1 - forget_value) * attn_x
-        # if updates % 100 == 0:
-        #     logger.info(f"forget: max: {torch.max(forget_value)}, min: {torch.min(forget_value)}, mean: {torch.mean(forget_value)}")
-        #     logger.info(f"update: max: {torch.max(update_value)}, min: {torch.min(update_value)}, mean: {torch.mean(update_value)}")
-        #     logger.info(f"gated: max: {torch.max(gated_value)}, min: {torch.min(gated_value)}, mean: {torch.mean(gated_value)}")
         x = self.shrink_adapter(gated_value)
         return x
 
@@ -90,6 +86,11 @@ class MoyuNetEncoder(XSTNetEncoder):
             self.textual_encoder_embed_dim,
             [int(k) for k in args.conv_kernel_sizes.split(",")],
         )
+
+    # def set_num_updates(self, num_updates):
+    #     """Set the number of parameters updates."""
+    #     super().set_num_updates(num_updates)
+    #     self.num_updates = num_updates
     
     def _get_hubert_feature(self, src_tokens, src_lengths):
         padding_mask = lengths_to_padding_mask(src_lengths)
@@ -133,14 +134,16 @@ class MoyuNetEncoder(XSTNetEncoder):
                                                                             return_short_audio_len=True)
             if self.using_moyulayer:
                 x = self.Moyu_layer(x)
+        # if self.num_updates % 100 == 0:
+        #     logger.info(f"after adapter: x_max: {x.max()}, x_min: {x.min()}, x_mean: {x.mean()}")
         encoder_embedding = x
         # 3. Transformer-layers
-        # layer_attn_weights = []
         for layer in self.transformer_layers:
             x = layer(x, encoder_padding_mask)
-            # layer_attn_weights.append(attn)
         if self.layer_norm is not None:
             x = self.layer_norm(x)
+        # if self.num_updates % 100 == 0:
+        #     logger.info(f"after encoder: x_max: {x.max()}, x_min: {x.min()}, x_mean: {x.mean()}")
 
         return EncoderOut(
             encoder_out=x,
@@ -150,5 +153,4 @@ class MoyuNetEncoder(XSTNetEncoder):
             src_tokens=None,
             src_lengths=None,
             output_encoder_lengths=short_audio_len,
-            # attn_weights=layer_attn_weights
         )

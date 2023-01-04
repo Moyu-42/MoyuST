@@ -9,6 +9,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 class MoyuNetDecoder(TransformerDecoderScriptable):
+    # def set_num_updates(self, num_updates):
+    #     """Set the number of parameters updates."""
+    #     super().set_num_updates(num_updates)
+    #     self.num_updates = num_updates
+
     def extract_features_scriptable(
         self,
         prev_output_tokens,
@@ -97,6 +102,9 @@ class MoyuNetDecoder(TransformerDecoderScriptable):
 
         # T x B x C -> B x T x C
         x = x.transpose(0, 1)
+
+        # if self.num_updates % 100 == 0:
+        #     logger.info(f"after decoder: x_max: {x.max()}, x_min: {x.min()}, x_mean: {x.mean()}")
 
         if self.project_out_dim is not None:
             x = self.project_out_dim(x)
